@@ -89,7 +89,7 @@ function calculateDecayedAverage(votes) {
 // =========================
 app.get("/api/scale", (req, res) => {
   const data = readScale();
-  const base = data.scale;  // ← unified name
+  const base = data.scale_value;  // ← unified name
 
   const decayedAverage = calculateDecayedAverage(data.votes);
 
@@ -116,4 +116,5 @@ app.get("/api/scale", (req, res) => {
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Lobby Smell Scale running at http://localhost:${PORT}`);
+
 });
