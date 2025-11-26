@@ -1,12 +1,14 @@
 {
-  "name": "lobby-smell-scale",
-  "type": "module",
-  "main": "server.js",
+  "name": "smell-scale",
+  "version": "1.0.0",
+  "main": "server.cjs",
+  "type": "commonjs",
   "scripts": {
     "start": "node server.cjs"
   },
   "dependencies": {
-    "express": "^4.19.0"
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "node-cron": "^3.0.3"
   }
 }
-
