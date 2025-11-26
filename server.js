@@ -1,157 +1,90 @@
+// server.js
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
-const cron = require("node-cron");
+const path = require("path");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ---------------------
-// DATA FILE
-// ---------------------
-const DATA_FILE = "./scaleData.json";
+// serve static files from ./public
+const PUBLIC_DIR = path.join(__dirname, "public");
+app.use(express.static(PUBLIC_DIR));
 
-// Initialize data file if missing
-if (!fs.existsSync(DATA_FILE)) {
-  fs.writeFileSync(
-    DATA_FILE,
-    JSON.stringify(
-      {
-        scale_value: 5,
-        votes: [],
-        last_updated: new Date().toISOString(),
-      },
-      null,
-      2
-    )
-  );
+// persistent data file
+const DATA_FILE = path.join(__dirname, "scaleData.json");
+
+// init data file if missing
+function ensureData() {
+  if (!fs.existsSync(DATA_FILE)) {
+    const initial = {
+      scale: 5,
+      last_updated: new Date().toISOString(),
+      votes: []
+    };
+    fs.writeFileSync(DATA_FILE, JSON.stringify(initial, null, 2));
+  }
 }
+ensureData();
 
-// Read/write helper functions
+// helpers
 function readData() {
-  return JSON.parse(fs.readFileSync(DATA_FILE));
-}
-
-function writeData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
-
-// ---------------------
-// DAILY SCHEDULE
-// ---------------------
-// Example schedule — adjust as needed
-const DAILY_SCHEDULE = [
-  { time: "00:00", action: "set", value: 10 },
-  { time: "02:00", action: "change", value: -1 },
-  { time: "04:00", action: "change", value: -1 },
-  { time: "06:00", action: "change", value: -1 },
-  { time: "08:00", action: "change", value: -1 },
-  { time: "20:00", action: "change", value: +1 },
-  { time: "22:00", action: "change", value: +1 },
-];
-
-// Schedule jobs
-DAILY_SCHEDULE.forEach((task) => {
-  const [hour, minute] = task.time.split(":");
-  const cronTime = `${minute} ${hour} * * *`;
-
-  cron.schedule(cronTime, () => {
-    const data = readData();
-
-    if (task.action === "set") {
-      data.scale_value = task.value;
-    } else if (task.action === "change") {
-      data.scale_value = Math.min(
-        10,
-        Math.max(1, data.scale_value + task.value)
-      );
-    }
-
-    data.last_updated = new Date().toISOString();
-    writeData(data);
-
-    console.log(`Scheduled update at ${task.time}: now ${data.scale_value}`);
-  });
-});
-
-// ---------------------
-// VOTING
-// ---------------------
-app.post("/api/vote", (req, res) => {
-  const { value } = req.body;
-
-  if (typeof value !== "number" || value < 1 || value > 10) {
-    return res.status(400).json({ error: "Vote must be 1–10." });
+  try {
+    const raw = fs.readFileSync(DATA_FILE, "utf8");
+    return JSON.parse(raw);
+  } catch (e) {
+    return { scale: 5, last_updated: new Date().toISOString(), votes: [] };
   }
-
-  const data = readData();
-  data.votes.push({
-    value,
-    timestamp: new Date().toISOString(),
-  });
-
-  writeData(data);
-
-  res.json({ message: "Vote recorded!" });
-});
-
-// ---------------------
-// DECAY MATH (HALF-LIFE)
-// ---------------------
-function decayedAverage(votes) {
-  const HALF_LIFE_HOURS = 1; // change if you want
-  const now = Date.now();
-
-  let sum = 0;
-  let totalWeight = 0;
-
-  for (const v of votes) {
-    const ageHours =
-      (now - new Date(v.timestamp).getTime()) / (1000 * 60 * 60);
-
-    const weight = Math.pow(0.5, ageHours / HALF_LIFE_HOURS);
-
-    sum += v.value * weight;
-    totalWeight += weight;
-  }
-
-  if (totalWeight === 0) return null;
-  return sum / totalWeight;
 }
 
-// ---------------------
-// CURRENT SCALE ENDPOINT
-// ---------------------
+function writeData(obj) {
+  fs.writeFileSync(DATA_FILE, JSON.stringify(obj, null, 2));
+}
+
+// GET /api/scale
 app.get("/api/scale", (req, res) => {
   const data = readData();
-  const faded = decayedAverage(data.votes);
-
-  if (faded === null) {
-    // no votes → show base
-    return res.json({
-      scale: data.scale_value,
-      base: data.scale_value,
-      votes: 0,
-      decayed: null,
-    });
-  }
-
-  // Blend base smell + votes
-  const blended = data.scale_value * 0.3 + faded * 0.7;
-
   res.json({
-    scale: Number(blended.toFixed(2)),
-    base: data.scale_value,
-    decayed: Number(faded.toFixed(2)),
-    votes: data.votes.length,
+    scale: data.scale,
+    base: data.scale,
+    decayedAverage: null,
+    votes: (data.votes || []).length
   });
 });
 
-// ---------------------
-// SERVER START
-// ---------------------
+// POST /api/vote  -> body { value: number }
+app.post("/api/vote", (req, res) => {
+  const value = Number(req.body.value);
+  if (!Number.isFinite(value) || value < 1 || value > 10) {
+    return res.status(400).json({ error: "value must be 1-10" });
+  }
+
+  const data = readData();
+  data.votes = data.votes || [];
+  data.votes.push({ value, timestamp: new Date().toISOString() });
+
+  // simple average merge: average votes with base
+  const voteValues = data.votes.map(v => v.value);
+  const avgVotes = voteValues.reduce((a,b)=>a+b,0)/voteValues.length;
+  const newScale = Math.round(((data.scale + avgVotes) / 2) * 100) / 100;
+
+  data.scale = Math.min(10, Math.max(1, newScale));
+  data.last_updated = new Date().toISOString();
+
+  writeData(data);
+  return res.json({ ok: true, scale: data.scale });
+});
+
+// fallback route - serve index.html for root (helps with Render)
+app.get("/", (req,res) => {
+  const index = path.join(PUBLIC_DIR, "index.html");
+  if (fs.existsSync(index)) return res.sendFile(index);
+  res.send("Lobby Smell Scale backend running");
+});
+
+// start server
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log("Smell Scale backend running on port " + PORT);
+  console.log(`Server listening on port ${PORT}`);
 });
