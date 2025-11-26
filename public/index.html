@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lobby Smell Scale</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+
+<body>
+
+<nav>
+  <a href="index.html"><img src="/public/img/PPU.png" width="400"></a>
+  <a href="index.html">Home</a>
+  <a href="vote.html">Vote</a>
+</nav>
+
+<h1>Lawrence Hall Smell-omiter</h1>
+<p><h2>How smelly is it right now?</h2></p>
+
+<!--Remove this line when its you no longer need to check if voting is working-->
+<div id="scale" style="font-size: 48px; font-weight: bold;">--</div>
+
+<div id="nose-container">
+  <img id="nose-image" src="/public/img/Green.png" alt="Smell level">
+</div>
+
+
+<script>
+  async function loadScale() {
+    const res = await fetch("/api/scale");
+    const data = await res.json();
+
+    document.getElementById("scale").innerText = data.scale;
+
+    // Determine which graphic to show
+    const noseImg = document.getElementById("nose-image");
+    const score = data.scale;
+
+    if (score <= 2) {
+      noseImg.src = "/public/img/Green.png";
+    } else if (score <= 5) {
+      noseImg.src = "/public/img/Yellow.png";
+    } else if (score <= 8) {
+      noseImg.src = "/public/img/Orange.png";
+    } else {
+      noseImg.src = "/public/img/Red.png";
+    }
+  }
+
+  loadScale();
+  setInterval(loadScale, 5000);
+</script>
+
+</body>
+</html>
+
+
+
+
+
+<!--
+<!DOCTYPE html>
+<html lang="en">
+ <h1>Lobby Smell Scale</h1>
+<p>How smelly is it right now?</p>
+<div id="scale">--</div>
+
+<div id="rating-buttons">
+  <p>Rate the smell (1 = Fresh, 10 = Horrendous):</p>
+  <div>
+    <script>
+      for (let i = 1; i <= 10; i++) {
+        document.write(
+          `<button onclick="vote(${i})">${i}</button>`
+        );
+      }
+    </script>
+  </div>
+</div>
+
+<script>
+  async function loadScale() {
+    const res = await fetch("/api/scale");
+    const data = await res.json();
+    document.getElementById("scale").innerText = data.scale;
+  }
+
+  async function vote(value) {
+    await fetch("/api/vote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value }),
+    });
+    loadScale();
+  }
+
+  loadScale();
+  setInterval(loadScale, 5000);
+</script>
+
+</script>
+
+</html>
+-->
