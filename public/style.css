@@ -1,0 +1,141 @@
+/* style.css - put this exact content into the file */
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  margin: 0;
+  background: #579E39;
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+}
+
+.container {
+ display: grid;
+ align-items: center; 
+ grid-template-columns: 1fr 1fr 1fr;
+ column-gap: 1px;
+}
+
+img {
+  max-width: 100%;
+  max-height:100%;
+}
+
+.text {
+  font-size: 25px;
+}
+
+nav {
+  background: #fdb813;
+  padding: 25px 25px;
+  display: flex;
+  gap: 25px;
+  align-items: center;
+}
+
+nav a {
+  color: #000000;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 24px;
+  align-items: Left;
+}
+
+nav a:hover {
+  text-decoration: underline;
+  opacity: 0.9;
+}
+
+.container {
+  max-width: 800px;
+  margin: 36px auto;
+  padding: 0 16px;
+  text-align: center;
+}
+
+#scale {
+  font-size: 100px;
+  font-weight: 800;
+  margin: 24px 0;
+  color: #ffffff;
+  text-align: center;
+}
+
+button.vote-btn {
+  padding: none;
+  margin: none;
+  font-size: none;
+  border-radius: none;
+  border: none;
+  cursor: pointer;
+  background: #2563eb;
+  color: rgb(0, 0, 0);
+}
+
+button.vote-btn:hover {
+  transform: translateY(-2px);
+}
+
+.vote-buttons button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0px;
+  cursor: pointer;
+}
+
+.vote-buttons button img {
+  display: block;
+  width: 150px;   /* or whatever size you want */
+  height: auto;
+}
+
+
+.thanks-btn {
+  padding: 12px 20px;
+  font-size: 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: #10b981;
+  color: white;
+}
+
+/* Nose Graphic */
+#nose-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+#nose-image {
+  width: 500px;
+  height: auto;
+}
+
+/* Voting Buttons */
+#vote-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  width: 320px;
+  margin: 0 auto;
+  gap: 0px;
+  justify-content: left;
+}
+
+.rating-btn {
+  width: 70px;
+  height: 70px;
+  border: none;
+  color: #000;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: transform 0.15s ease;
+}
+
+.rating-btn:hover {
+  transform: scale(1.1);
+}
